@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% block content %}
+<h3>Блоки опыта</h3>
+<p><a href='/resume/experience/new'>+ Добавить блок</a></p>
+<table><tr><th>ID</th><th>Компания/роль/период</th><th>Track</th><th>Bullet</th><th></th></tr>
+{% for i in items %}<tr><td>{{i.id}}</td><td>{{i.company}} / {{i.role}} / {{i.period_from}}-{{i.period_to}}</td><td>{{i.track}}</td><td>{{i.bullet_ready}}</td><td><a href='/resume/experience/{{i.id}}/edit'>Редактировать</a></td></tr>{% endfor %}</table>
+{% endblock %}

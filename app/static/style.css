@@ -1,0 +1,8 @@
+body{font-family:Arial,sans-serif;max-width:1100px;margin:20px auto;padding:0 12px;color:#111}
+a{color:#1344aa;text-decoration:none}a:hover{text-decoration:underline}
+.header{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.card{border:1px solid #ddd;border-radius:8px;padding:12px;margin:10px 0}
+input,textarea,select,button{font:inherit;padding:6px;margin:3px 0}
+textarea{width:100%;min-height:90px}
+table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #e8e8e8;padding:8px;text-align:left;vertical-align:top}
+.small{font-size:12px;color:#555}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}

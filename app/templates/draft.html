@@ -1,0 +1,34 @@
+{% extends 'base.html' %}{% block content %}
+<h3>Draft #{{draft.id}}</h3>
+<div class='card'>
+  <p><a href='/resume/resume/{{draft.id}}/pdf'>Скачать PDF (1 страница)</a></p>
+  <h4>Diff буллетов</h4>
+  <pre>{{diff}}</pre>
+</div>
+<form method='post' action='/resume/drafts/{{draft.id}}/save'>
+<div class='grid'>
+  <div>
+    <h4>Resume HTML</h4>
+    <textarea name='resume_html' style='min-height:280px'>{{draft.resume_html}}</textarea>
+  </div>
+  <div>
+    <h4>ATS plain text</h4>
+    <textarea name='resume_text_plain' style='min-height:280px'>{{draft.resume_text_plain}}</textarea>
+  </div>
+</div>
+<h4>Сопроводительное письмо</h4>
+<textarea id='cover_text' name='cover_letter_text' style='min-height:140px'>{{draft.cover_letter_text}}</textarea>
+<p><button type='button' onclick='copyCover()'>Копировать сопроводительное</button></p>
+<button>Сохранить изменения</button>
+</form>
+<div class='card'><h4>Preview</h4>{{draft.resume_html|safe}}</div>
+<script>
+function copyCover(){
+  const t = document.getElementById('cover_text');
+  t.select();
+  t.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+  alert('Сопроводительное скопировано');
+}
+</script>
+{% endblock %}
