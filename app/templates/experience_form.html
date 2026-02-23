@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block content %}
+<h3>{% if item %}Редактирование{% else %}Новый{% endif %} блока опыта</h3>
+<form method='post'>
+<input name='company' placeholder='Компания' value='{{item.company if item else ""}}' required><br>
+<input name='role' placeholder='Роль' value='{{item.role if item else ""}}' required><br>
+<input name='period_from' placeholder='Период от' value='{{item.period_from if item else ""}}'>
+<input name='period_to' placeholder='Период до' value='{{item.period_to if item else ""}}'><br>
+<input name='track' placeholder='Track' value='{{item.track if item else "other"}}'><br>
+<textarea name='situation' placeholder='Situation'>{{item.situation if item else ""}}</textarea>
+<textarea name='task' placeholder='Task'>{{item.task if item else ""}}</textarea>
+<textarea name='action' placeholder='Action'>{{item.action if item else ""}}</textarea>
+<textarea name='result' placeholder='Result'>{{item.result if item else ""}}</textarea>
+<textarea name='bullet_ready' placeholder='Готовый буллет' required>{{item.bullet_ready if item else ""}}</textarea>
+<input name='tools_csv' placeholder='tools через запятую' value='{{item.tools_json if item else ""}}'><br>
+<input name='keywords_csv' placeholder='keywords через запятую' value='{{item.keywords_json if item else ""}}'><br>
+<input name='strength' type='number' value='{{item.strength if item else 3}}'><br>
+<button>Сохранить</button>
+</form>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block content %}
+<h3>Список вакансий</h3>
+<form method='get' action='/resume/'>
+  <input name='q' value='{{q}}' placeholder='поиск по тексту/компании/роли'>
+  <select name='track'><option value=''>Все track</option>{% for t in tracks %}<option {% if track==t %}selected{% endif %}>{{t}}</option>{% endfor %}</select>
+  <button>Фильтровать</button>
+</form>
+<table><tr><th>ID</th><th>Роль</th><th>Компания</th><th>Track</th><th>Score</th><th></th></tr>
+{% for v in vacancies %}<tr><td>{{v.id}}</td><td>{{v.title}}</td><td>{{v.company}}</td><td>{{v.track}}</td><td>{{v.score}}</td><td><a href='/resume/vacancies/{{v.id}}'>Открыть</a></td></tr>{% endfor %}</table>
+{% endblock %}
