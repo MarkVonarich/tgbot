@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block content %}
+<div class='card'>
+  <h3>{{vacancy.title}}</h3>
+  <p><b>Компания:</b> {{vacancy.company}} | <b>Track:</b> {{vacancy.track}} | <b>Score:</b> {{vacancy.score}}</p>
+  {% if vacancy.url %}<p><a target='_blank' href='{{vacancy.url}}'>Ссылка HH</a></p>{% endif %}
+  <p><b>Keywords:</b> {{keywords|join(', ')}}</p>
+  <form method='post' action='/resume/vacancies/{{vacancy.id}}/build'><button>Собрать резюме</button></form>
+</div>
+<div class='grid'>
+  <div class='card'><h4>Требования</h4><pre>{{vacancy.requirements_raw}}</pre></div>
+  <div class='card'><h4>Обязанности</h4><pre>{{vacancy.responsibilities_raw}}</pre></div>
+</div>
+<div class='card'><h4>Условия</h4><pre>{{vacancy.conditions_raw}}</pre></div>
+<div class='card'><h4>Черновики по этой вакансии</h4>
+{% for d in drafts %}<p><a href='/resume/drafts/{{d.id}}'>Draft #{{d.id}}</a> — {{d.created_at}}</p>{% else %}<p>Пока нет.</p>{% endfor %}</div>
+{% endblock %}
