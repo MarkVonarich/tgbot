@@ -17,8 +17,18 @@
   </div>
 </div>
 <h4>Сопроводительное письмо</h4>
-<textarea name='cover_letter_text' style='min-height:140px'>{{draft.cover_letter_text}}</textarea>
+<textarea id='cover_text' name='cover_letter_text' style='min-height:140px'>{{draft.cover_letter_text}}</textarea>
+<p><button type='button' onclick='copyCover()'>Копировать сопроводительное</button></p>
 <button>Сохранить изменения</button>
 </form>
 <div class='card'><h4>Preview</h4>{{draft.resume_html|safe}}</div>
+<script>
+function copyCover(){
+  const t = document.getElementById('cover_text');
+  t.select();
+  t.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+  alert('Сопроводительное скопировано');
+}
+</script>
 {% endblock %}

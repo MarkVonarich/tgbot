@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from .db import Base, engine, get_db
-from .models import ExperienceBlock, ImportLog, ResumeDraft, Vacancy
+from .models import ExperienceBlock, ImportLog, ResumeDraft, UserProfile, Vacancy
 from .services import (
     build_cover_letter,
     detect_track,
@@ -37,6 +38,22 @@ app.mount('/resume/static', StaticFiles(directory='app/static'), name='static')
 templates = Jinja2Templates(directory='app/templates')
 
 
+def get_or_create_profile(db: Session) -> UserProfile:
+    profile = db.query(UserProfile).order_by(UserProfile.id.asc()).first()
+    if not profile:
+        profile = UserProfile(
+            full_name='Максим Чиранов',
+            target_title='Senior Antifraud / Marketing Fraud Analyst',
+            contacts='Москва | Telegram: @your_tg | Email: your@email.com',
+            summary='Антифрод-аналитик с опытом в маркетинговом и бонусном фроде, SQL/ClickHouse/Postgres, правилах детекта, алертах и BI-дашбордах.',
+            education='Высшее образование (указать вуз, факультет, год).',
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    return profile
+
+
 @app.on_event('startup')
 def startup():
     Base.metadata.create_all(bind=engine)
@@ -60,6 +77,31 @@ def home(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse('home.html', {'request': request, 'vacancies': vacancies, 'tracks': tracks, 'q': q, 'track': track})
 
 
+@app.get('/resume/profile', response_class=HTMLResponse)
+def profile_page(request: Request, db: Session = Depends(get_db)):
+    profile = get_or_create_profile(db)
+    return templates.TemplateResponse('profile.html', {'request': request, 'profile': profile})
+
+
+@app.post('/resume/profile')
+def profile_save(
+    full_name: str = Form(...),
+    target_title: str = Form(...),
+    contacts: str = Form(...),
+    summary: str = Form(...),
+    education: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    profile = get_or_create_profile(db)
+    profile.full_name = full_name
+    profile.target_title = target_title
+    profile.contacts = contacts
+    profile.summary = summary
+    profile.education = education
+    db.commit()
+    return RedirectResponse('/resume/profile', status_code=303)
+
+
 @app.get('/resume/admin/import', response_class=HTMLResponse)
 def import_page(request: Request, db: Session = Depends(get_db)):
     logs = db.query(ImportLog).order_by(desc(ImportLog.imported_at)).limit(20).all()
@@ -67,7 +109,7 @@ def import_page(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post('/resume/admin/import')
-async def import_txt(request: Request, file: UploadFile, db: Session = Depends(get_db)):
+async def import_txt(file: UploadFile, db: Session = Depends(get_db)):
     dst = IMPORTS_DIR / file.filename
     with dst.open('wb') as f:
         shutil.copyfileobj(file.file, f)
@@ -79,10 +121,33 @@ async def import_txt(request: Request, file: UploadFile, db: Session = Depends(g
         kws = extract_keywords(text)
         track = detect_track(text)
         score = vacancy_score(text, kws)
-        v = Vacancy(**item, keywords_json=dumps(kws), track=track, score=score)
-        db.add(v)
+        db.add(Vacancy(**item, keywords_json=dumps(kws), track=track, score=score))
         inserted += 1
     db.add(ImportLog(filename=file.filename, rows_count=inserted, notes=f'parsed chunks={len(parsed)}'))
+    db.commit()
+    return RedirectResponse('/resume/', status_code=303)
+
+
+@app.post('/resume/admin/import/path')
+def import_txt_by_path(path: str = Form(...), db: Session = Depends(get_db)):
+    src = Path(path).expanduser()
+    if not src.exists() or not src.is_file():
+        db.add(ImportLog(filename=path, rows_count=0, notes='file not found'))
+        db.commit()
+        return RedirectResponse('/resume/admin/import', status_code=303)
+    dst = IMPORTS_DIR / src.name
+    shutil.copy2(src, dst)
+    raw = dst.read_text(encoding='utf-8', errors='ignore')
+    parsed = split_vacancies(raw)
+    inserted = 0
+    for item in parsed:
+        text = item['text_raw']
+        kws = extract_keywords(text)
+        track = detect_track(text)
+        score = vacancy_score(text, kws)
+        db.add(Vacancy(**item, keywords_json=dumps(kws), track=track, score=score))
+        inserted += 1
+    db.add(ImportLog(filename=str(src), rows_count=inserted, notes=f'import by path, parsed chunks={len(parsed)}'))
     db.commit()
     return RedirectResponse('/resume/', status_code=303)
 
@@ -97,6 +162,7 @@ def vacancy_view(vacancy_id: int, request: Request, db: Session = Depends(get_db
 @app.post('/resume/vacancies/{vacancy_id}/build')
 def build_resume(vacancy_id: int, db: Session = Depends(get_db)):
     vacancy = db.get(Vacancy, vacancy_id)
+    profile = get_or_create_profile(db)
     v_keywords = set(parse_json_list(vacancy.keywords_json))
     blocks = db.query(ExperienceBlock).all()
     scored = []
@@ -118,13 +184,14 @@ def build_resume(vacancy_id: int, db: Session = Depends(get_db)):
     tools = sorted({t for b in selected for t in parse_json_list(b.tools_json)})[:15]
     skills = sorted({k for b in selected for k in parse_json_list(b.keywords_json) if k not in tools})[:18]
 
-    profile = {
-        'name': 'Кандидат: Resume Radar User',
-        'title': 'Senior Antifraud / Marketing Fraud Analyst',
-        'contacts': 'Москва | Telegram/Email добавить перед откликом',
-        'summary': 'Антифрод-аналитик с опытом в маркетинговом и бонусном фроде, SQL/ClickHouse/Postgres, витринах правил, алертах и BI-дашбордах.',
+    profile_data = {
+        'name': profile.full_name,
+        'title': profile.target_title,
+        'contacts': profile.contacts,
+        'summary': profile.summary,
+        'education': profile.education,
     }
-    html = render_resume_html(profile, grouped, skills, tools)
+    html = render_resume_html(profile_data, grouped, skills, tools)
     plain = html_to_text(html)
 
     old = db.query(ResumeDraft).filter(ResumeDraft.vacancy_id == vacancy_id).order_by(desc(ResumeDraft.id)).first()
@@ -151,7 +218,7 @@ def build_resume(vacancy_id: int, db: Session = Depends(get_db)):
 @app.get('/resume/drafts/{draft_id}', response_class=HTMLResponse)
 def view_draft(draft_id: int, request: Request, db: Session = Depends(get_db)):
     draft = db.get(ResumeDraft, draft_id)
-    return templates.TemplateResponse('draft.html', {'request': request, 'draft': draft, 'diff': parse_json_list('[]') if not draft.diff_json else __import__('json').loads(draft.diff_json)})
+    return templates.TemplateResponse('draft.html', {'request': request, 'draft': draft, 'diff': json.loads(draft.diff_json or '{}')})
 
 
 @app.post('/resume/drafts/{draft_id}/save')
@@ -214,7 +281,7 @@ def experience_create(
     kws = [x.strip().lower() for x in keywords_csv.split(',') if x.strip()]
     if not kws:
         kws = extract_keywords(' '.join([bullet_ready, situation, task, action, result]))
-    item = ExperienceBlock(
+    db.add(ExperienceBlock(
         company=company,
         role=role,
         period_from=period_from,
@@ -228,8 +295,7 @@ def experience_create(
         tools_json=dumps(tools),
         keywords_json=dumps(kws),
         strength=strength,
-    )
-    db.add(item)
+    ))
     db.commit()
     return RedirectResponse('/resume/experience', status_code=303)
 

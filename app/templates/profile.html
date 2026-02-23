@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block content %}
+<h3>Профиль кандидата (используется в генерации резюме)</h3>
+<form method='post'>
+  <p><input name='full_name' value='{{profile.full_name}}' placeholder='ФИО' style='width:520px' required></p>
+  <p><input name='target_title' value='{{profile.target_title}}' placeholder='Целевая роль' style='width:520px' required></p>
+  <p><input name='contacts' value='{{profile.contacts}}' placeholder='Контакты' style='width:520px' required></p>
+  <p><textarea name='summary' placeholder='Профиль' style='min-height:100px'>{{profile.summary}}</textarea></p>
+  <p><textarea name='education' placeholder='Образование' style='min-height:80px'>{{profile.education}}</textarea></p>
+  <button>Сохранить профиль</button>
+</form>
+<p class='small'>После изменения профиля заново нажмите «Собрать резюме» на нужной вакансии.</p>
+{% endblock %}

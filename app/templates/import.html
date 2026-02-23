@@ -5,6 +5,12 @@
   <button>Загрузить и импортировать</button>
 </form>
 <p class='small'>Файлы сохраняются в /root/resume_radar/imports/</p>
+<hr>
+<h4>Импорт по пути на сервере</h4>
+<form method='post' action='/resume/admin/import/path'>
+  <input name='path' placeholder='/root/resume_radar/imports/vacancies_hh.txt' style='width:520px' required>
+  <button>Импортировать по пути</button>
+</form>
 <h4>Логи импорта</h4>
 <table><tr><th>Когда</th><th>Файл</th><th>Строк</th><th>Notes</th></tr>
 {% for log in logs %}<tr><td>{{log.imported_at}}</td><td>{{log.filename}}</td><td>{{log.rows_count}}</td><td>{{log.notes}}</td></tr>{% endfor %}</table>

@@ -67,3 +67,15 @@ class ImportLog(Base):
     imported_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     rows_count: Mapped[int] = mapped_column(Integer, default=0)
     notes: Mapped[str] = mapped_column(Text, default='')
+
+
+class UserProfile(Base):
+    __tablename__ = 'user_profile'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    full_name: Mapped[str] = mapped_column(String(300), default='')
+    target_title: Mapped[str] = mapped_column(String(300), default='')
+    contacts: Mapped[str] = mapped_column(String(500), default='')
+    summary: Mapped[str] = mapped_column(Text, default='')
+    education: Mapped[str] = mapped_column(Text, default='')
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
